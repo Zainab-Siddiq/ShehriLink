@@ -27,7 +27,7 @@ Add New -> Project -> import the repo, then:
 |---|---|
 | Project name | `shehrilink-db` |
 | Root Directory | `backend` |
-| Framework Preset | Other |
+| Framework Preset | FastAPI |
 
 Environment variables:
 
@@ -45,7 +45,7 @@ Deploy, then open `https://shehrilink-db.vercel.app/health` -> `{"status":"ok"}`
 |---|---|
 | Project name | `shehrilink-agent` |
 | Root Directory | `municipal_complaint_agent` |
-| Framework Preset | Other |
+| Framework Preset | FastAPI |
 
 Environment variables:
 
@@ -75,7 +75,7 @@ mention it: `DB_BACKEND_URL` (project 2) and the `destination` in `municipal_com
 * **401 / login page when opening a URL:** Project -> Settings -> Deployment Protection -> turn Vercel Authentication off
   for Production (it is meant for previews).
 * **Cold starts:** the first request after a quiet period takes a few seconds (three functions wake up one after
-  the other). Submitting a complaint makes ~20 calls to the database backend; it is allowed up to 60 s (`maxDuration`).
+  the other). Submitting a complaint makes ~20 calls to the database backend; Vercel's default function time limit is enough for that.
 * **Free tiers** have monthly limits (Vercel Hobby, Neon free); a demo stays far below them.
 * **No login:** the admin pages and the database API are open to anyone who knows the URL. Fine for a demo; add
   authentication before real use.
