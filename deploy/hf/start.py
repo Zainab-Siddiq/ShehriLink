@@ -20,6 +20,9 @@ os.environ.setdefault("DB_BACKEND_URL", "http://127.0.0.1:8001")
 os.environ.setdefault("LLM_PROVIDER", "mock")
 os.environ.setdefault("VERIFICATION_SCENARIO", "manual")
 
+# The database file is not part of the Space repo: create it and load the demo data (no-op if it has data).
+subprocess.run([sys.executable, "-m", "app.seed.seed_data"], cwd=ROOT / "backend", check=False)
+
 db = subprocess.Popen([sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8001"],
                       cwd=ROOT / "backend")
 atexit.register(db.terminate)

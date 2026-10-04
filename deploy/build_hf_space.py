@@ -5,7 +5,6 @@
 Builds the React app and copies backend + agent + built frontend + start.py + README.md into OUT_DIR.
 Run it again whenever the code changes, then commit and push OUT_DIR to the Space.
 """
-import os
 import shutil
 import subprocess
 import sys
@@ -14,7 +13,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 HF = Path(__file__).resolve().parent / "hf"
 FRONTEND = REPO / "municipal_complaint_agent" / "frontend"
-SKIP = shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache", "tests", "test_*.db", ".env", "conftest.py")
+SKIP = shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache", "tests", "*.db", ".env", "conftest.py")
 
 
 def run(cmd: list, cwd: Path) -> None:
@@ -44,12 +43,8 @@ def main() -> None:
         shutil.rmtree(out / name, ignore_errors=True)
     out.mkdir(parents=True, exist_ok=True)
 
+    # No database file is shipped (Hugging Face rejects binary files in git); start.py seeds the demo data on start.
     shutil.copytree(REPO / "backend", out / "backend", ignore=SKIP)
-    # Always ship a freshly seeded database, never the local one (it may hold your own test complaints).
-    db_file = out / "backend" / "municipal.db"
-    db_file.unlink(missing_ok=True)
-    subprocess.run([sys.executable, "-m", "app.seed.seed_data", "--reset"], cwd=out / "backend", check=True,
-                   env={**os.environ, "DATABASE_URL": f"sqlite:///{db_file.as_posix()}"})
     shutil.copytree(REPO / "municipal_complaint_agent" / "app", out / "agent" / "app", ignore=SKIP)
     shutil.copy2(REPO / "municipal_complaint_agent" / "run.py", out / "agent" / "run.py")
     shutil.copytree(FRONTEND / "dist", out / "static")
