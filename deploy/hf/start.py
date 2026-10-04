@@ -12,6 +12,17 @@ import time
 import urllib.request
 from pathlib import Path
 
+# Free Gradio Spaces run on ZeroGPU, which refuses to keep a Space alive unless it registers a
+# @spaces.GPU function. We never call it (the app needs no GPU); it only satisfies that startup check.
+try:
+    import spaces
+
+    @spaces.GPU
+    def _zerogpu_placeholder() -> int:
+        return 0
+except ImportError:                      # running anywhere else (local machine, normal CPU host)
+    pass
+
 ROOT = Path(__file__).resolve().parent
 PORT = os.getenv("PORT", "7860")
 
