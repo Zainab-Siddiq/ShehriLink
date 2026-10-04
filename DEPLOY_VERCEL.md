@@ -25,7 +25,7 @@ Add New -> Project -> import the repo, then:
 
 | Setting | Value |
 |---|---|
-| Project name | `shehrilink-db` |
+| Project name | `shehri-link-db` |
 | Root Directory | `backend` |
 | Framework Preset | FastAPI |
 
@@ -37,13 +37,13 @@ Environment variables:
 | `AUTO_SEED` | `1` (loads the demo data the first time) |
 | `ENABLE_DEMO_ROUTES` | `0` (otherwise anyone can call `POST /demo/reset` and wipe the data) |
 
-Deploy, then open `https://shehrilink-db.vercel.app/health` -> `{"status":"ok"}`.
+Deploy, then open `https://shehri-link-db.vercel.app/health` -> `{"status":"ok"}`.
 
 ## 3. Vercel project 2: agent backend
 
 | Setting | Value |
 |---|---|
-| Project name | `shehrilink-agent` |
+| Project name | `shehri-link` |
 | Root Directory | `municipal_complaint_agent` |
 | Framework Preset | FastAPI |
 
@@ -51,11 +51,11 @@ Environment variables:
 
 | Name | Value |
 |---|---|
-| `DB_BACKEND_URL` | `https://shehrilink-db.vercel.app` |
+| `DB_BACKEND_URL` | `https://shehri-link-db.vercel.app` |
 | `LLM_PROVIDER` | `mock` |
 | `VERIFICATION_SCENARIO` | `manual` |
 
-Check `https://shehrilink-agent.vercel.app/api/health`.
+Check `https://shehri-link.vercel.app/api/health`.
 
 ## 4. Vercel project 3: frontend
 
@@ -65,7 +65,7 @@ Check `https://shehrilink-agent.vercel.app/api/health`.
 | Root Directory | `municipal_complaint_agent/frontend` |
 | Framework Preset | Vite |
 
-No environment variables. `frontend/vercel.json` forwards `/api/*` to `https://shehrilink-agent.vercel.app`.
+No environment variables. `frontend/vercel.json` forwards `/api/*` to `https://shehri-link.vercel.app`.
 
 ## If a project name is already taken
 Vercel then gives the project a different URL (e.g. `shehrilink-agent-xyz.vercel.app`). Fix the three places that
