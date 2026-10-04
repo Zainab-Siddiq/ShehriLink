@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -117,6 +118,20 @@ def list_agent_activity(complaint_id: str, since_id: int = Query(0, ge=0, descri
     if cycle is not None:
         q = q.filter(AgentActivityLog.cycle == cycle)
     return q.order_by(AgentActivityLog.id).all()
+
+
+@router.get("/agent-activity/snapshots", response_model=List[ActivityOut])
+def list_snapshots(step: str = Query("agent_final_state", description="Activity step that holds a result snapshot"),
+                   agent_complaint_id: Optional[str] = Query(None, description="Only the snapshot whose data.complaint_id matches"),
+                   limit: int = Query(200, ge=1, le=500), db: Session = Depends(get_db)):
+    """The latest snapshot row of every complaint (newest first), in ONE query. The agent backend stores its
+    final workflow state this way, so it can list/look up results without one request per complaint."""
+    latest = (select(func.max(AgentActivityLog.id)).where(AgentActivityLog.step == step)
+              .group_by(AgentActivityLog.complaint_id))
+    q = db.query(AgentActivityLog).filter(AgentActivityLog.id.in_(latest))
+    if agent_complaint_id is not None:
+        q = q.filter(AgentActivityLog.data["complaint_id"].as_string() == agent_complaint_id)
+    return q.order_by(AgentActivityLog.id.desc()).limit(limit).all()
 
 
 @router.post("/agent-activity", response_model=ActivityOut, status_code=201)

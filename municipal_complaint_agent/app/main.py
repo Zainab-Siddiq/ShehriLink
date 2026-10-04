@@ -14,10 +14,15 @@ from fastapi.responses import FileResponse
 from app import __version__
 from app.config import get_settings
 from app.data.mock_data import DEMO_SCENARIOS, SCENARIO_HELP
+from app.data.http_repository import configure_from_env
 from app.data.mock_database import get_repository
 from app.graph.state import ComplaintState
 from app.graph.workflow import ManualVerificationError, process_complaint, verify_manually
 from app.models.schemas import ManualVerificationRequest, ProcessComplaintRequest
+
+# Integrated mode: when DB_BACKEND_URL is set the agents read/write the Database Backend. Done here (not only in
+# run.py) so that hosts importing `app.main:app` directly (Vercel, uvicorn ...) get it too.
+configure_from_env()
 
 app = FastAPI(
     title="Municipal Complaint Resolution Agent",

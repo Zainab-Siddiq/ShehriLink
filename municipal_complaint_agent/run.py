@@ -9,7 +9,6 @@ Entry point.
   python run.py complaint "Garbage not collected in Gulbahar" --scenario fail_once
 """
 import argparse
-import os
 import sys
 
 SYMBOLS = {"success": "✓", "failed": "✗", "replanning": "↻", "escalated": "⚠", "info": "•"}
@@ -53,11 +52,8 @@ def main() -> None:
     from app.graph.workflow import process_complaint
 
     # Integrated mode: use the Database Backend (set DB_BACKEND_URL in .env). Without it, the in-memory mock is used.
-    db_url = os.getenv("DB_BACKEND_URL", "").strip()
-    if db_url:
-        from app.data.http_repository import HttpRepository
-        from app.data.mock_database import set_repository
-        set_repository(HttpRepository(db_url))
+    from app.data.http_repository import configure_from_env
+    configure_from_env()
 
     if args.cmd == "demo":
         chosen = [s for s in DEMO_SCENARIOS if args.name in ("all", s["key"])]

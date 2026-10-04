@@ -1,7 +1,11 @@
 """Every test runs in deterministic MOCK mode (no LLM, no network), whatever is in your .env."""
+import os
+
 import pytest
 
-from app.data import mock_database
+os.environ["DB_BACKEND_URL"] = ""   # set BEFORE app.config loads .env (real env vars win over .env)
+
+from app.data import mock_database  # noqa: E402
 
 
 @pytest.fixture(autouse=True)

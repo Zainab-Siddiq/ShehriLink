@@ -9,6 +9,7 @@ How it works
 ------------
 * READS (teams, open complaints) come from the Database Backend:
     GET /teams, GET /complaints, GET /departments, GET /zones
+  Processed results are read with GET /agent-activity/snapshots (one request, no per-complaint calls).
 * WRITES happen once the workflow has finished (`save_processed_complaint`).
   The final state + timeline are replayed into the Database Backend through its
   existing endpoints, in the order its state machine requires:
@@ -35,7 +36,7 @@ Enable with the environment variable DB_BACKEND_URL (see .env.example / README).
 import copy
 import os
 import re
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.data import mock_data
 from app.data.mock_database import MockRepository
@@ -114,7 +115,6 @@ class HttpRepository(MockRepository):
         self._zone_ids: Dict[str, int] = {}
         self._zone_codes: Dict[int, str] = {}
         self._index: Dict[str, int] = {}                 # agent complaint_id -> database id
-        self._snapshots: Dict[int, dict] = {}            # database id -> final agent state
 
     # ------------------------------------------------------------------ http
     def _request(self, method: str, path: str, *, allow_404: bool = False, **kwargs) -> Any:
@@ -354,46 +354,51 @@ class HttpRepository(MockRepository):
 
     def save_processed_complaint(self, result: dict) -> None:
         state = copy.deepcopy(result)
-        db_id = self._persist(state, self._index.get(str(state["complaint_id"])))
-        self._index[str(state["complaint_id"])] = db_id
-        self._snapshots[db_id] = state
+        cid = str(state["complaint_id"])
+        self._index[cid] = self._persist(state, self._index.get(cid))
 
     # ----------------------------------------------------- reading results back
+    # Nothing is cached here except the (permanent) agent id -> database id mapping: on a serverless host
+    # every request may be served by a different instance, so a cached state would go stale.
+    def _snapshots(self, **params) -> List[Tuple[int, dict]]:
+        """(database id, final agent state) of the latest snapshot per complaint, newest first (one request)."""
+        rows = self._request("GET", "/agent-activity/snapshots", params={"step": SNAPSHOT_STEP, **params})
+        return [(r["complaint_id"], r["data"]["state"]) for r in rows if (r.get("data") or {}).get("state")]
+
     def _snapshot(self, db_id: int) -> Optional[dict]:
-        if db_id in self._snapshots:
-            return self._snapshots[db_id]
         rows = self._request("GET", f"/complaints/{db_id}/agent-activity", allow_404=True) or []
         state = None
         for r in rows:                      # oldest -> newest, keep the latest snapshot
             data = r.get("data") or {}
             if r.get("step") == SNAPSHOT_STEP and data.get("state"):
                 state = data["state"]
-        if state is not None:
-            self._snapshots[db_id] = state
         return state
-
-    def _scan(self) -> Iterator[Tuple[int, dict]]:
-        """(database id, final agent state) for every complaint processed by the agents, newest first."""
-        for c in self._request("GET", "/complaints", params={"limit": 200}):
-            if not c.get("simulation_mode"):    # complaints created by the agents always carry one
-                continue
-            state = self._snapshot(c["id"])
-            if state is not None:
-                yield c["id"], state
 
     def get_processed_complaint(self, complaint_id: str) -> Optional[dict]:
         cid = str(complaint_id)
-        db_id = self._index.get(cid)
-        if db_id is None and _REFERENCE_NO.fullmatch(cid.upper()):
+        if _REFERENCE_NO.fullmatch(cid.upper()):            # a database reference such as MC-0004
             db_id = self._db_id_of_reference(cid)
-        if db_id is not None:
-            state = self._snapshot(db_id)
+            state = self._snapshot(db_id) if db_id is not None else None
             return copy.deepcopy(state) if state is not None else None
-        for found_id, state in self._scan():
-            if str(state.get("complaint_id")) == cid:
-                self._index[cid] = found_id
-                return copy.deepcopy(state)
-        return None
+        found = self._snapshots(agent_complaint_id=cid, limit=1)
+        if not found:
+            return None
+        self._index[cid] = found[0][0]
+        return copy.deepcopy(found[0][1])
 
     def list_processed_complaints(self) -> List[dict]:
-        return [copy.deepcopy(state) for _, state in self._scan()]
+        return [copy.deepcopy(state) for _, state in self._snapshots(limit=200)]
+
+
+def configure_from_env() -> bool:
+    """Use the Database Backend when DB_BACKEND_URL is set (agents keep their mock data otherwise).
+    Safe to call more than once."""
+    from app.data.mock_database import get_repository, set_repository
+
+    url = os.getenv("DB_BACKEND_URL", "").strip()
+    if not url:
+        return False
+    current = get_repository()
+    if not (isinstance(current, HttpRepository) and current.base_url == url.rstrip("/")):
+        set_repository(HttpRepository(url))
+    return True
