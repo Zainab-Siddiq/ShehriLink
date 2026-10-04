@@ -1,0 +1,24 @@
+# secrets / local config
+.env
+*.env.local
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# node / build output
+node_modules/
+dist/
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# NOTE: backend/municipal.db is committed on purpose (demo data used by the deployed backend)
+
+test_*.db

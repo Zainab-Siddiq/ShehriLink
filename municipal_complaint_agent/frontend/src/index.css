@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cream: 251 245 221; --sand: 231 225 177; --leaf: 48 109 41; --forest: 13 83 14; --ink: 18 48 26;
+  --surface: 255 255 255; --deep: 13 83 14; --paper: 251 245 221; --sandc: 231 225 177;
+  --crit: 179 38 30; --medtext: 122 95 0;
+}
+.dark {
+  --cream: 15 23 17; --sand: 40 58 43; --leaf: 122 184 104; --forest: 168 214 150; --ink: 228 236 224;
+  --surface: 23 34 26; --deep: 20 46 25; --crit: 232 90 80; --medtext: 232 200 90;
+  color-scheme: dark;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { @apply bg-cream text-ink font-sans antialiased transition-colors duration-200; }
+  html[lang='ur'] body { font-family: 'Noto Nastaliq Urdu', 'Inter', serif; line-height: 2; }
+  html[lang='ur'] h1, html[lang='ur'] h2, html[lang='ur'] h3 { line-height: 1.8; }
+  html[lang='ur'] h1 { font-size: clamp(1.5rem, 3.4vw, 2.4rem); }
+  html[lang='ur'] h2 { font-size: clamp(1.3rem, 2.6vw, 1.9rem); }
+  /* spaced / uppercase text breaks Arabic-script letter joining */
+  html[lang='ur'] * { letter-spacing: 0 !important; text-transform: none !important; }
+  h1, h2, h3 { @apply text-forest tracking-tight; }
+}
+
+@layer components {
+  .card { @apply bg-surface/80 border border-sand rounded-2xl shadow-card; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-leaf focus-visible:ring-offset-2 focus-visible:ring-offset-cream disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn-primary { @apply btn bg-forest text-cream hover:bg-leaf; }
+  .btn-ghost { @apply btn bg-transparent text-forest border border-sand hover:bg-sand/50; }
+  .input { @apply w-full rounded-xl border border-sand bg-surface px-3.5 py-2.5 text-sm placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-leaf/60 focus:border-leaf; }
+  .label { @apply block text-sm font-semibold text-forest mb-1.5; }
+}
+
+@keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.animate-slide-in { animation: slideIn .35s ease-out both; }
