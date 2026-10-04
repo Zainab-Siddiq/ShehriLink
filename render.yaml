@@ -1,0 +1,37 @@
+# Render Blueprint: two free web services (database backend + agent backend).
+# Render dashboard -> New -> Blueprint -> pick this repo.
+#
+# The service names below decide the public URLs:
+#   https://shehrilink-db.onrender.com      (database backend)
+#   https://shehrilink-agent.onrender.com   (agent backend)
+# If Render says a name is taken, rename it here AND update DB_BACKEND_URL below and the redirect in netlify.toml.
+services:
+  - type: web
+    name: shehrilink-db
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+
+  - type: web
+    name: shehrilink-agent
+    runtime: python
+    plan: free
+    rootDir: municipal_complaint_agent
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run.py serve --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DB_BACKEND_URL
+        value: https://shehrilink-db.onrender.com
+      - key: LLM_PROVIDER
+        value: mock
+      - key: VERIFICATION_SCENARIO
+        value: manual

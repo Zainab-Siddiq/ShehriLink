@@ -1,0 +1,22 @@
+# Netlify: connect this repo; build settings and the /api proxy come from here.
+[build]
+  base = "municipal_complaint_agent/frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# The frontend calls relative /api/... URLs; forward them to the agent backend on Render.
+# (Change the host if you renamed the service in render.yaml.)
+[[redirects]]
+  from = "/api/*"
+  to = "https://shehrilink-agent.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# React Router: serve index.html for every other path (e.g. /admin/complaints/C-1234)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
