@@ -1,13 +1,3 @@
----
-title: ShehriLink
-emoji: 🏙️
-colorFrom: green
-colorTo: green
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # Municipal Complaint Resolution - integrated project
 
 Three existing parts, connected:
@@ -49,3 +39,4 @@ Notes
 * Zone/department/category names differ between the two projects; they are translated by the tables at the top of `http_repository.py`.
 * Manual verification (default, `VERIFICATION_SCENARIO=manual`): a new complaint stays open ("Team assigned") until an officer opens it in the admin page (`/admin/complaints/<id>`) and clicks "Fixed - close complaint" or "Not fixed - reassign" (API: `POST /api/complaints/{id}/verify`). The other scenarios (`success`, `fail_once`, ...) still simulate the result automatically; pick them under "Simulation options" on the Submit page.
 * Each part keeps its own README and tests.
+* Free hosting without a card (Hugging Face Space, Gradio SDK as a Python host): `python deploy/build_hf_space.py` assembles a Space folder (backend + agent + built frontend + `start.py`); push that folder to the Space.
