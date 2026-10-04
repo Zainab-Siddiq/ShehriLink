@@ -4,8 +4,12 @@ FastAPI integration layer.
 Run:  python run.py          (or)   uvicorn app.main:app --reload --port 8000
 Docs: http://localhost:8000/docs
 """
+import os
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app import __version__
 from app.config import get_settings
@@ -80,3 +84,20 @@ def get_complaint(complaint_id: str) -> ComplaintState:
     if data is None:
         raise HTTPException(status_code=404, detail=f"Complaint '{complaint_id}' has not been processed.")
     return ComplaintState.model_validate(data)
+
+
+# ------------------------------------------------------------ built frontend (single-container deploy)
+# Set STATIC_DIR to the Vite build output (frontend/dist) and this API serves the web app too,
+# so everything lives on one origin. Registered last so every /api route above wins.
+_static = os.getenv("STATIC_DIR", "").strip()
+if _static and (Path(_static) / "index.html").is_file():
+    _root = Path(_static).resolve()
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def spa(path: str):
+        if path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        target = (_root / path).resolve()
+        if path and target.is_file() and _root in target.parents:
+            return FileResponse(target)
+        return FileResponse(_root / "index.html")        # React Router handles the path
